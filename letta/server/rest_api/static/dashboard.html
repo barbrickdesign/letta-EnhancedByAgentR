@@ -489,7 +489,8 @@
         state.agents = Array.isArray(agents) ? agents : [];
         state.steps = Array.isArray(steps) ? steps : [];
         state.jobs = Array.isArray(jobs) ? jobs : [];
-        if (!Array.isArray(agents) || !Array.isArray(steps) || !Array.isArray(jobs)) {
+        const hasShapeWarning = !Array.isArray(agents) || !Array.isArray(steps) || !Array.isArray(jobs);
+        if (hasShapeWarning) {
           statusEl.textContent = "Loaded with warnings: one or more API responses were not array-shaped.";
           console.warn("Unexpected dashboard API shape", { agents, steps, jobs });
         }
@@ -499,7 +500,7 @@
         renderJobs();
         buildGraph();
         startGraph();
-        if (!statusEl.textContent.startsWith("Loaded with warnings")) {
+        if (!hasShapeWarning) {
           statusEl.textContent = `Loaded ${state.agents.length} agents, ${state.steps.length} steps, ${state.jobs.length} jobs.`;
         }
       } catch (err) {

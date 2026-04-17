@@ -243,6 +243,7 @@
   </div>
 
   <script>
+    // Practical defaults for quick dashboard loads without over-fetching.
     const API_LIMITS = { agents: 100, steps: 120, jobs: 120 };
     const MAX_LOG_ROWS = 80;
     const MAX_GRAPH_NODES = 90;
@@ -287,7 +288,10 @@
 
     async function api(path) {
       const res = await fetch(path, { headers: headers() });
-      if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`${path} -> ${res.status} ${res.statusText}${body ? ` | ${body.slice(0, 300)}` : ""}`);
+      }
       return res.json();
     }
 
@@ -357,7 +361,10 @@
           method: "PATCH",
           headers: headers()
         });
-        if (!res.ok) throw new Error(`Cancel failed: ${res.status}`);
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Cancel failed: ${res.status} ${res.statusText}${body ? ` | ${body.slice(0, 300)}` : ""}`);
+        }
         statusEl.textContent = `Cancelled ${jobId}. Refreshing…`;
         await refresh();
       } catch (err) {
@@ -482,13 +489,19 @@
         state.agents = Array.isArray(agents) ? agents : [];
         state.steps = Array.isArray(steps) ? steps : [];
         state.jobs = Array.isArray(jobs) ? jobs : [];
+        if (!Array.isArray(agents) || !Array.isArray(steps) || !Array.isArray(jobs)) {
+          statusEl.textContent = "Loaded with warnings: one or more API responses were not array-shaped.";
+          console.warn("Unexpected dashboard API shape", { agents, steps, jobs });
+        }
 
         renderStats();
         renderLogs();
         renderJobs();
         buildGraph();
         startGraph();
-        statusEl.textContent = `Loaded ${state.agents.length} agents, ${state.steps.length} steps, ${state.jobs.length} jobs.`;
+        if (!statusEl.textContent.startsWith("Loaded with warnings")) {
+          statusEl.textContent = `Loaded ${state.agents.length} agents, ${state.steps.length} steps, ${state.jobs.length} jobs.`;
+        }
       } catch (err) {
         statusEl.textContent = `Load failed. Check token/actor ID and server settings. (${err.message})`;
       }

@@ -243,6 +243,11 @@
   </div>
 
   <script>
+    const API_LIMITS = { agents: 100, steps: 120, jobs: 120 };
+    const MAX_LOG_ROWS = 80;
+    const MAX_GRAPH_NODES = 90;
+    const MAX_GRAPH_EDGES = 180;
+    const GRAPH_ROTATION_SPEED = 0.0032;
     const state = { agents: [], steps: [], jobs: [], graph: { nodes: [], edges: [] }, angle: 0 };
     const el = (id) => document.getElementById(id);
     const statusEl = el("status");
@@ -321,7 +326,7 @@
         });
       }
       rows.sort((a, b) => new Date(b.when || 0) - new Date(a.when || 0));
-      const topRows = rows.slice(0, 80);
+      const topRows = rows.slice(0, MAX_LOG_ROWS);
       el("logCount").textContent = `${topRows.length} recent items`;
       body.innerHTML = topRows.map((r) => `
         <tr>
@@ -385,9 +390,9 @@
         edges.push([`p:${projectId}`, `a:${agentId}`], [`a:${agentId}`, `m:${model}`]);
       }
 
-      state.graph.nodes = [...projectNodes.values(), ...agentNodes.values(), ...modelNodes.values()].slice(0, 90);
+      state.graph.nodes = [...projectNodes.values(), ...agentNodes.values(), ...modelNodes.values()].slice(0, MAX_GRAPH_NODES);
       const allowed = new Set(state.graph.nodes.map((n) => n.id));
-      state.graph.edges = edges.filter(([a, b]) => allowed.has(a) && allowed.has(b)).slice(0, 180);
+      state.graph.edges = edges.filter(([a, b]) => allowed.has(a) && allowed.has(b)).slice(0, MAX_GRAPH_EDGES);
     }
 
     function drawGraph() {
@@ -404,7 +409,7 @@
       const cx = w / 2;
       const cy = h / 2;
       const spread = Math.min(w, h) * 0.34;
-      state.angle += 0.0032;
+      state.angle += GRAPH_ROTATION_SPEED;
 
       const nodes = state.graph.nodes.map((n, i) => {
         const a = (i / Math.max(1, state.graph.nodes.length)) * Math.PI * 2;
@@ -457,9 +462,9 @@
       statusEl.textContent = "Loading dashboard data…";
       try {
         const [agents, steps, jobs] = await Promise.all([
-          api("/v1/agents?limit=100"),
-          api("/v1/steps?limit=120&order=desc"),
-          api("/v1/jobs?limit=120&order=desc")
+          api(`/v1/agents?limit=${API_LIMITS.agents}`),
+          api(`/v1/steps?limit=${API_LIMITS.steps}&order=desc`),
+          api(`/v1/jobs?limit=${API_LIMITS.jobs}&order=desc`)
         ]);
         state.agents = Array.isArray(agents) ? agents : [];
         state.steps = Array.isArray(steps) ? steps : [];

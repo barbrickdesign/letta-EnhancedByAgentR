@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Letta Work Dashboard</title>
+  <title>Letta Dashboard</title>
   <style>
     :root {
       --bg: #0b1020;
@@ -181,7 +181,7 @@
   <div class="wrap">
     <div class="header">
       <div>
-        <h1>Letta Work Dashboard</h1>
+        <h1>Letta Dashboard</h1>
         <div class="sub">Simple management + work log + connected project memory graph</div>
       </div>
       <div><a href="/docs" style="color:#c6d5ff;">API Docs</a></div>
@@ -248,6 +248,19 @@
     const MAX_GRAPH_NODES = 90;
     const MAX_GRAPH_EDGES = 180;
     const GRAPH_ROTATION_SPEED = 0.0032;
+    const GRAPH_LAYOUT = {
+      radiusMinFactor: 0.45,
+      radiusVarianceSeed: 37,
+      radiusVarianceSpan: 55,
+      zWaveFactor: 1.7,
+      zSpreadFactor: 0.55,
+      yRotationFactor: 1.2,
+      yScale: 0.7,
+      perspectiveFactor: 2.3,
+      zOscillationAmplitude: 22,
+      minNodeSize: 3.2,
+      nodeDepthScale: 7
+    };
     const state = { agents: [], steps: [], jobs: [], graph: { nodes: [], edges: [] }, angle: 0 };
     const el = (id) => document.getElementById(id);
     const statusEl = el("status");
@@ -413,12 +426,12 @@
 
       const nodes = state.graph.nodes.map((n, i) => {
         const a = (i / Math.max(1, state.graph.nodes.length)) * Math.PI * 2;
-        const r = spread * (0.45 + ((i * 37) % 55) / 100);
-        const z0 = Math.sin(a * 1.7) * spread * 0.55;
+        const r = spread * (GRAPH_LAYOUT.radiusMinFactor + ((i * GRAPH_LAYOUT.radiusVarianceSeed) % GRAPH_LAYOUT.radiusVarianceSpan) / 100);
+        const z0 = Math.sin(a * GRAPH_LAYOUT.zWaveFactor) * spread * GRAPH_LAYOUT.zSpreadFactor;
         const x = Math.cos(a + state.angle) * r;
-        const y = Math.sin(a + state.angle * 1.2) * r * 0.7;
-        const z = z0 + Math.sin(state.angle + i) * 22;
-        const depth = 1 / (1 + (z + spread) / (spread * 2.3));
+        const y = Math.sin(a + state.angle * GRAPH_LAYOUT.yRotationFactor) * r * GRAPH_LAYOUT.yScale;
+        const z = z0 + Math.sin(state.angle + i) * GRAPH_LAYOUT.zOscillationAmplitude;
+        const depth = 1 / (1 + (z + spread) / (spread * GRAPH_LAYOUT.perspectiveFactor));
         return { ...n, x: cx + x * depth, y: cy + y * depth, depth };
       });
 
@@ -440,7 +453,7 @@
       nodes.sort((a, b) => a.depth - b.depth);
       for (const n of nodes) {
         const color = n.type === "project" ? "#5f8cff" : n.type === "agent" ? "#2ec27e" : "#f6c445";
-        const size = 3.2 + n.depth * 7;
+        const size = GRAPH_LAYOUT.minNodeSize + n.depth * GRAPH_LAYOUT.nodeDepthScale;
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.arc(n.x, n.y, size, 0, Math.PI * 2);

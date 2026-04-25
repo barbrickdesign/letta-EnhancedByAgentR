@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Letta Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131b33;
+      --panel-2: #1a2648;
+      --text: #e8eeff;
+      --muted: #9db0d3;
+      --accent: #5f8cff;
+      --accent-2: #7d5fff;
+      --good: #2ec27e;
+      --warn: #f6c445;
+      --bad: #ff6b6b;
+      --border: #2a3a67;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a2550 0%, var(--bg) 42%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: 28px; }
+    .sub { color: var(--muted); margin-top: 4px; font-size: 14px; }
+    .panel {
+      background: linear-gradient(180deg, var(--panel) 0%, #101a35 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      height: 38px;
+      padding: 0 10px;
+    }
+    button {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      height: 38px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .status {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      margin-bottom: 12px;
+    }
+    .stat .label { color: var(--muted); font-size: 12px; }
+    .stat .value { font-size: 28px; font-weight: 700; margin-top: 3px; }
+    .sections {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-wrap {
+      max-height: 310px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #213058;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #172447;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: #c5d4ff;
+      font-weight: 600;
+    }
+    .pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .good { background: rgba(46,194,126,.15); color: var(--good); }
+    .warn { background: rgba(246,196,69,.16); color: var(--warn); }
+    .bad { background: rgba(255,107,107,.14); color: var(--bad); }
+    .graph-wrap { height: 430px; }
+    #brainGraph {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at 30% 10%, #1b2d66 0%, #0e1630 55%);
+      display: block;
+    }
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+    @media (max-width: 1040px) {
+      .sections { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .controls { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>Letta Dashboard</h1>
+        <div class="sub">Simple management + work log + connected project memory graph</div>
+      </div>
+      <div><a href="/docs" style="color:#c6d5ff;">API Docs</a></div>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="field">
+          <label>Bearer token (optional)</label>
+          <input id="token" type="password" placeholder="Paste token if required by your setup" />
+        </div>
+        <div class="field">
+          <label>Actor ID (optional)</label>
+          <input id="actorId" type="text" placeholder="user-..." />
+        </div>
+        <button id="refreshBtn">Refresh</button>
+        <button id="saveBtn" class="secondary">Save Settings</button>
+      </div>
+      <p id="status" class="status">Loading dashboard…</p>
+
+      <div class="grid">
+        <div class="panel stat"><div class="label">Agents</div><div id="agentsCount" class="value">-</div></div>
+        <div class="panel stat"><div class="label">Projects Connected</div><div id="projectCount" class="value">-</div></div>
+        <div class="panel stat"><div class="label">Completed Jobs</div><div id="completedJobs" class="value">-</div></div>
+        <div class="panel stat"><div class="label">Failed Work Items</div><div id="failedItems" class="value">-</div></div>
+      </div>
+
+      <div class="sections">
+        <div class="panel">
+          <h3 class="section-title">Simple Log of Work Completed <span id="logCount" style="font-size:12px;color:#9db0d3;"></span></h3>
+          <div class="table-wrap">
+            <table id="logTable">
+              <thead><tr><th>Time</th><th>Type</th><th>Status</th><th>Details</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 class="section-title">Manage Active Jobs</h3>
+          <div class="table-wrap">
+            <table id="jobsTable">
+              <thead><tr><th>Job</th><th>Status</th><th>Agent</th><th>Action</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel graph-wrap">
+        <h3 class="section-title">3D Visual Memory Brain (Connected Projects)</h3>
+        <canvas id="brainGraph"></canvas>
+        <div class="legend">
+          <span><span class="dot" style="background:#5f8cff"></span>Project</span>
+          <span><span class="dot" style="background:#2ec27e"></span>Agent</span>
+          <span><span class="dot" style="background:#f6c445"></span>Memory Node (Model)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Practical defaults for quick dashboard loads without over-fetching.
+    const API_LIMITS = { agents: 100, steps: 120, jobs: 120 };
+    const MAX_LOG_ROWS = 80;
+    const MAX_GRAPH_NODES = 90;
+    const MAX_GRAPH_EDGES = 180;
+    const GRAPH_ROTATION_SPEED = 0.0032;
+    const GRAPH_LAYOUT = {
+      radiusMinFactor: 0.45,
+      radiusVarianceSeed: 37,
+      radiusVarianceSpan: 55,
+      zWaveFactor: 1.7,
+      zSpreadFactor: 0.55,
+      yRotationFactor: 1.2,
+      yScale: 0.7,
+      perspectiveFactor: 2.3,
+      zOscillationAmplitude: 22,
+      minNodeSize: 3.2,
+      nodeDepthScale: 7
+    };
+    const state = { agents: [], steps: [], jobs: [], graph: { nodes: [], edges: [] }, angle: 0 };
+    const el = (id) => document.getElementById(id);
+    const statusEl = el("status");
+    const tokenEl = el("token");
+    const actorEl = el("actorId");
+
+    function loadSettings() {
+      tokenEl.value = localStorage.getItem("letta_dashboard_token") || "";
+      actorEl.value = localStorage.getItem("letta_dashboard_actor") || "";
+    }
+
+    function saveSettings() {
+      localStorage.setItem("letta_dashboard_token", tokenEl.value.trim());
+      localStorage.setItem("letta_dashboard_actor", actorEl.value.trim());
+      statusEl.textContent = "Settings saved.";
+    }
+
+    function headers() {
+      const h = { "Content-Type": "application/json" };
+      if (tokenEl.value.trim()) h.Authorization = `Bearer ${tokenEl.value.trim()}`;
+      if (actorEl.value.trim()) h["user_id"] = actorEl.value.trim();
+      return h;
+    }
+
+    async function api(path) {
+      const res = await fetch(path, { headers: headers() });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`${path} -> ${res.status} ${res.statusText}${body ? ` | ${body.slice(0, 300)}` : ""}`);
+      }
+      return res.json();
+    }
+
+    function fmt(ts) {
+      if (!ts) return "-";
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return "-";
+      return d.toLocaleString();
+    }
+
+    function statusClass(value) {
+      const v = String(value || "").toLowerCase();
+      if (["completed", "success", "succeeded"].includes(v)) return "good";
+      if (["running", "created", "pending"].includes(v)) return "warn";
+      return "bad";
+    }
+
+    function renderStats() {
+      const projects = new Set(state.steps.map((s) => s.project_id || "unassigned"));
+      const completedJobs = state.jobs.filter((j) => String(j.status).toLowerCase() === "completed").length;
+      const failedItems =
+        state.jobs.filter((j) => ["failed", "cancelled"].includes(String(j.status).toLowerCase())).length +
+        state.steps.filter((s) => String(s.status).toLowerCase() === "failed").length;
+
+      el("agentsCount").textContent = String(state.agents.length);
+      el("projectCount").textContent = String(projects.size);
+      el("completedJobs").textContent = String(completedJobs);
+      el("failedItems").textContent = String(failedItems);
+    }
+
+    function renderLogs() {
+      const body = el("logTable").querySelector("tbody");
+      const rows = [];
+
+      for (const step of state.steps) {
+        rows.push({
+          when: step.created_at,
+          type: "Step",
+          status: step.status || "success",
+          details: `${step.id || "step"} • ${step.model || "model"} • ${step.project_id || "unassigned project"}`
+        });
+      }
+      for (const job of state.jobs) {
+        rows.push({
+          when: job.completed_at || job.created_at,
+          type: "Job",
+          status: job.status || "unknown",
+          details: `${job.id || "job"} • ${job.agent_id || "no agent"}`
+        });
+      }
+      rows.sort((a, b) => new Date(b.when || 0) - new Date(a.when || 0));
+      const topRows = rows.slice(0, MAX_LOG_ROWS);
+      el("logCount").textContent = `${topRows.length} recent items`;
+      body.innerHTML = topRows.map((r) => `
+        <tr>
+          <td>${fmt(r.when)}</td>
+          <td>${r.type}</td>
+          <td><span class="pill ${statusClass(r.status)}">${r.status}</span></td>
+          <td>${r.details}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function cancelJob(jobId) {
+      try {
+        const res = await fetch(`/v1/jobs/${jobId}/cancel`, {
+          method: "PATCH",
+          headers: headers()
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Cancel failed: ${res.status} ${res.statusText}${body ? ` | ${body.slice(0, 300)}` : ""}`);
+        }
+        statusEl.textContent = `Cancelled ${jobId}. Refreshing…`;
+        await refresh();
+      } catch (err) {
+        statusEl.textContent = `Cancel error: ${err.message}`;
+      }
+    }
+
+    function renderJobs() {
+      const body = el("jobsTable").querySelector("tbody");
+      const active = state.jobs.filter((j) => ["created", "running", "pending"].includes(String(j.status).toLowerCase()));
+      if (!active.length) {
+        body.innerHTML = `<tr><td colspan="4">No active jobs.</td></tr>`;
+        return;
+      }
+      body.innerHTML = active.map((j) => `
+        <tr>
+          <td>${j.id || "-"}</td>
+          <td><span class="pill ${statusClass(j.status)}">${j.status}</span></td>
+          <td>${j.agent_id || "-"}</td>
+          <td><button class="secondary" data-cancel="${j.id}">Cancel</button></td>
+        </tr>
+      `).join("");
+      for (const btn of body.querySelectorAll("button[data-cancel]")) {
+        btn.addEventListener("click", () => cancelJob(btn.dataset.cancel));
+      }
+    }
+
+    function buildGraph() {
+      const projectNodes = new Map();
+      const agentNodes = new Map();
+      const modelNodes = new Map();
+      const edges = [];
+
+      for (const step of state.steps) {
+        const projectId = step.project_id || "unassigned";
+        const agentId = step.agent_id || "unknown-agent";
+        const model = step.model || "unknown-model";
+
+        if (!projectNodes.has(projectId)) projectNodes.set(projectId, { id: `p:${projectId}`, label: projectId, type: "project" });
+        if (!agentNodes.has(agentId)) agentNodes.set(agentId, { id: `a:${agentId}`, label: agentId, type: "agent" });
+        if (!modelNodes.has(model)) modelNodes.set(model, { id: `m:${model}`, label: model, type: "memory" });
+
+        edges.push([`p:${projectId}`, `a:${agentId}`], [`a:${agentId}`, `m:${model}`]);
+      }
+
+      state.graph.nodes = [...projectNodes.values(), ...agentNodes.values(), ...modelNodes.values()].slice(0, MAX_GRAPH_NODES);
+      const allowed = new Set(state.graph.nodes.map((n) => n.id));
+      state.graph.edges = edges.filter(([a, b]) => allowed.has(a) && allowed.has(b)).slice(0, MAX_GRAPH_EDGES);
+    }
+
+    function drawGraph() {
+      const canvas = el("brainGraph");
+      const rect = canvas.getBoundingClientRect();
+      const dpi = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpi));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpi));
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpi, 0, 0, dpi, 0, 0);
+
+      const w = rect.width;
+      const h = rect.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const spread = Math.min(w, h) * 0.34;
+      state.angle += GRAPH_ROTATION_SPEED;
+
+      const nodes = state.graph.nodes.map((n, i) => {
+        const a = (i / Math.max(1, state.graph.nodes.length)) * Math.PI * 2;
+        const r = spread * (GRAPH_LAYOUT.radiusMinFactor + ((i * GRAPH_LAYOUT.radiusVarianceSeed) % GRAPH_LAYOUT.radiusVarianceSpan) / 100);
+        const z0 = Math.sin(a * GRAPH_LAYOUT.zWaveFactor) * spread * GRAPH_LAYOUT.zSpreadFactor;
+        const x = Math.cos(a + state.angle) * r;
+        const y = Math.sin(a + state.angle * GRAPH_LAYOUT.yRotationFactor) * r * GRAPH_LAYOUT.yScale;
+        const z = z0 + Math.sin(state.angle + i) * GRAPH_LAYOUT.zOscillationAmplitude;
+        const depth = 1 / (1 + (z + spread) / (spread * GRAPH_LAYOUT.perspectiveFactor));
+        return { ...n, x: cx + x * depth, y: cy + y * depth, depth };
+      });
+
+      const byId = new Map(nodes.map((n) => [n.id, n]));
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = "rgba(154,178,240,.28)";
+      ctx.lineWidth = 1;
+      for (const [a, b] of state.graph.edges) {
+        const na = byId.get(a);
+        const nb = byId.get(b);
+        if (!na || !nb) continue;
+        ctx.beginPath();
+        ctx.moveTo(na.x, na.y);
+        ctx.lineTo(nb.x, nb.y);
+        ctx.stroke();
+      }
+
+      nodes.sort((a, b) => a.depth - b.depth);
+      for (const n of nodes) {
+        const color = n.type === "project" ? "#5f8cff" : n.type === "agent" ? "#2ec27e" : "#f6c445";
+        const size = GRAPH_LAYOUT.minNodeSize + n.depth * GRAPH_LAYOUT.nodeDepthScale;
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    let animRef;
+    function startGraph() {
+      if (animRef) cancelAnimationFrame(animRef);
+      const loop = () => {
+        drawGraph();
+        animRef = requestAnimationFrame(loop);
+      };
+      loop();
+    }
+
+    async function refresh() {
+      statusEl.textContent = "Loading dashboard data…";
+      try {
+        const [agents, steps, jobs] = await Promise.all([
+          api(`/v1/agents?limit=${API_LIMITS.agents}`),
+          api(`/v1/steps?limit=${API_LIMITS.steps}&order=desc`),
+          api(`/v1/jobs?limit=${API_LIMITS.jobs}&order=desc`)
+        ]);
+        state.agents = Array.isArray(agents) ? agents : [];
+        state.steps = Array.isArray(steps) ? steps : [];
+        state.jobs = Array.isArray(jobs) ? jobs : [];
+        const hasShapeWarning = !Array.isArray(agents) || !Array.isArray(steps) || !Array.isArray(jobs);
+        if (hasShapeWarning) {
+          statusEl.textContent = "Loaded with warnings: one or more API responses were not array-shaped.";
+          console.warn("Unexpected dashboard API shape", { agents, steps, jobs });
+        }
+
+        renderStats();
+        renderLogs();
+        renderJobs();
+        buildGraph();
+        startGraph();
+        if (!hasShapeWarning) {
+          statusEl.textContent = `Loaded ${state.agents.length} agents, ${state.steps.length} steps, ${state.jobs.length} jobs.`;
+        }
+      } catch (err) {
+        statusEl.textContent = `Load failed. Check token/actor ID and server settings. (${err.message})`;
+      }
+    }
+
+    loadSettings();
+    el("refreshBtn").addEventListener("click", refresh);
+    el("saveBtn").addEventListener("click", saveSettings);
+    window.addEventListener("resize", () => startGraph());
+    refresh();
+  </script>
+</body>
+</html>
